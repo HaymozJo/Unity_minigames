@@ -893,10 +893,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef564c7f5040528438f09f5dcce65f2b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  staticBird: {fileID: -1170314142166883259, guid: 74d6c21f9b0d9d14288613c46ff3c3c1, type: 3}
+  jumpBird: {fileID: 2878155811090707268, guid: 9bf9acb44252c054fa757a9b89a57418, type: 3}
+  deadBird: {fileID: -9074604089657260514, guid: c94a0ec42abba5646b004a8153b8aea0, type: 3}
   myRigidbody: {fileID: 1231483095}
   logic: {fileID: 0}
   birdAlive: 0
   flapStrength: 4.5
+  degree: 10
 --- !u!58 &1231483097
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -1189,7 +1193,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -690.4, y: 395.3}
+  m_AnchoredPosition: {x: -795, y: 263}
   m_SizeDelta: {x: 276.9, y: 179.4}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1660057539 &9223372036854775807
