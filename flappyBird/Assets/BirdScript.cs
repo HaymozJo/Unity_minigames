@@ -12,7 +12,15 @@ public class BirdScript : MonoBehaviour
     public float flapStrength;
 
     public float degree = 280;
+
+    private AudioManager audioManager;
     private SpriteRenderer sr;
+
+    void Awake()
+    {
+        audioManager = GameObject.FindGameObjectWithTag("Audio").GetComponent<AudioManager>();
+    }
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -27,6 +35,7 @@ public class BirdScript : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Space) && birdAlive)
         {
+            audioManager.PlaySFX(audioManager.Jump);
             myRigidbody.linearVelocity = Vector2.up * flapStrength;
             StartCoroutine (ChangeFace (jumpBird));
         }
@@ -43,7 +52,7 @@ public class BirdScript : MonoBehaviour
     }
 
     private void KillBird(){
-
+        audioManager.PlaySFX(audioManager.Col);
         birdAlive = false;
         transform.Rotate(new Vector3(0, 0, 35), Space.Self);
         GetComponent<SpriteRenderer>().sprite = deadBird;
