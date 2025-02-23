@@ -597,7 +597,7 @@ AudioSource:
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
-  m_Volume: 1
+  m_Volume: 0.234
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -955,7 +955,7 @@ GameObject:
   - component: {fileID: 819419085}
   m_Layer: 0
   m_Name: AudioManager
-  m_TagString: Untagged
+  m_TagString: Audio
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -974,6 +974,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   musicSource: {fileID: 539093675}
   SFXSource: {fileID: 307630673}
+  Background: {fileID: 8300000, guid: 10a153a980c722242990266d3843b998, type: 3}
   Jump: {fileID: 8300000, guid: 939d2fe8d962f3f43ab05a62551820de, type: 3}
   Coin: {fileID: 8300000, guid: e0580162d611baa48ab1edb87154d27d, type: 3}
   Col: {fileID: 8300000, guid: 243b6dd61c5d12d49abc665c6d3c656f, type: 3}
