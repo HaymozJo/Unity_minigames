@@ -17,9 +17,18 @@ public class LogicScript : MonoBehaviour
 
     public void restartGame()
     {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        SceneManager.LoadSceneAsync(1);
+    }
+    
+    public void mainMenu()
+    {
+        SceneManager.LoadSceneAsync(0);
     }
 
+    public void quitGame()
+    {
+        Application.Quit();
+    }
     public void gameOver()
     {
         gameOverScreen.SetActive(true);
