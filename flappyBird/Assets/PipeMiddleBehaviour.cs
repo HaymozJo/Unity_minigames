@@ -28,7 +28,6 @@ public class PipeMiddleBehaviour : MonoBehaviour
             audioManager.PlaySFX(audioManager.Coin);
             logic.addScore(1);
             logic.SetHighScore();
-            logic.UpdateHighScores();
         }
         
     }

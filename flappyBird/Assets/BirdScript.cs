@@ -54,11 +54,16 @@ public class BirdScript : MonoBehaviour
     }
 
     private void KillBird(){
-        audioManager.PlaySFX(audioManager.Col);
-        birdAlive = false;
+        
         transform.Rotate(new Vector3(0, 0, 35), Space.Self);
         GetComponent<SpriteRenderer>().sprite = deadBird;
-        logic.gameOver();
+        if (birdAlive){
+            audioManager.PlaySFX(audioManager.Col);
+            logic.gameOver();
+            logic.UpdateHighScores();
+            birdAlive= false;
+        }
+        
     }
 
     public IEnumerator ChangeFace (Sprite changeToSprite)

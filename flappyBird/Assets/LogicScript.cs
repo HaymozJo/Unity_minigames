@@ -19,7 +19,6 @@ public class LogicScript : MonoBehaviour
     public GameObject menuScreen;
 
     private bool alreadyPlayed = false;
-    private bool running = false;
     private int highScore;
     private string playerName;
 
@@ -116,15 +115,10 @@ public class LogicScript : MonoBehaviour
     public void restartGame()
     {
         SceneManager.LoadSceneAsync(1);
-        running = true;
     }
     
     public void mainMenu()
     {
-        if (running){
-            UpdateHighScores();
-            running = false;
-        }
         SceneManager.LoadSceneAsync(0);
     }
 
@@ -151,7 +145,6 @@ public class LogicScript : MonoBehaviour
     }
     public void gameOver()
     {
-
         gameOverScreen.SetActive(true);
     }
 }
