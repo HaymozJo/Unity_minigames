@@ -19,8 +19,11 @@ public class LogicScript : MonoBehaviour
     public GameObject menuScreen;
 
     private bool alreadyPlayed = false;
+    private bool running = false;
     private int highScore;
     private string playerName;
+
+    private int maxBestScore = 5;
 
     [ContextMenu("Increase Score")]
     public void addScore(int scoreToAdd)
@@ -31,20 +34,19 @@ public class LogicScript : MonoBehaviour
 
     public void SetName()
     {
-        PlayerPrefs.SetString("Name", inputField.text);
+        PlayerPrefs.SetString("LastName", inputField.text);
     }
 
     public void ApplyName()
     {
-        nameText.text = PlayerPrefs.GetString("Name");
+        nameText.text = PlayerPrefs.GetString("LastName");
     }
 
 
     public void SetHighScore()
     {
-        playerName = PlayerPrefs.GetString("Name").ToString();
+        playerName = PlayerPrefs.GetString("LastName").ToString();
         string highscoreStr = "HS" + playerName;
-        Debug.Log(highscoreStr);
 
         alreadyPlayed = PlayerPrefs.HasKey(highscoreStr);
         if (alreadyPlayed){
@@ -61,13 +63,68 @@ public class LogicScript : MonoBehaviour
         }
     }
 
+        public void UpdateHighScores()
+    {
+        //get the player currently playing
+        string playerName = PlayerPrefs.GetString("LastName");
+
+        for (int i=1; i<= maxBestScore; i++)
+        {   
+            
+            string highscoreStr = "HS" + playerName;
+            int highscore = PlayerPrefs.GetInt(highscoreStr);
+            string key = i.ToString() + "HS";
+            bool scoreExist = PlayerPrefs.HasKey(key);
+            if (scoreExist){
+                int scoreToBeat = PlayerPrefs.GetInt(key);
+                string nameKey = i+"HSname";
+                string otherPlayerName = PlayerPrefs.GetString(nameKey);
+                if (playerName==otherPlayerName){
+                    if (highscore>=scoreToBeat){
+                         PlayerPrefs.SetInt(key, highscore);
+                    }
+                    break;
+                }else{
+                    if (highscore>=scoreToBeat){
+                        PlayerPrefs.SetInt(key, highscore);
+                        PlayerPrefs.SetString(nameKey, playerName);
+                        //Now we have to get down the new number by now using their score and name
+                        playerName = otherPlayerName ;
+                    }
+                }
+                
+            }else{
+                PlayerPrefs.SetInt(key, highscore);
+                string nameKey = i.ToString() +"HSname";
+                PlayerPrefs.SetString(nameKey, playerName);
+                break;
+            }
+                //Check if  a best score exist//if best score exist, check if bigger, 
+        }
+
+        for (int i=1; i<= maxBestScore; i++){
+            string key = i.ToString() + "HS";
+            string nameKey = i.ToString() +"HSname";
+            int score = PlayerPrefs.GetInt(key, 0);
+            string name = PlayerPrefs.GetString(nameKey, "Unknown");
+            Debug.Log(name + " this guy has the best score of: "+ score.ToString()+ "placed; "+ i.ToString());
+        }
+
+    }
+
+
     public void restartGame()
     {
         SceneManager.LoadSceneAsync(1);
+        running = true;
     }
     
     public void mainMenu()
     {
+        if (running){
+            UpdateHighScores();
+            running = false;
+        }
         SceneManager.LoadSceneAsync(0);
     }
 
@@ -94,6 +151,7 @@ public class LogicScript : MonoBehaviour
     }
     public void gameOver()
     {
+
         gameOverScreen.SetActive(true);
     }
 }

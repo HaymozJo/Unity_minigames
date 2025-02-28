@@ -2440,6 +2440,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7873247722291909970, guid: 8e115daabf69d0e4f986dcd1e34d18a3, type: 3}
+      propertyPath: m_FontData.m_FontStyle
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8414652158082195597, guid: 8e115daabf69d0e4f986dcd1e34d18a3, type: 3}
       propertyPath: m_Name
       value: Score
@@ -2749,8 +2753,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a7a5f508907f93e4d83847383b270b63, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  addY: 25
-  startY: 275
+  addY: 22
+  startY: 235
   startX: 275
   addX: 100
   scorePrefab: {fileID: 1135342975}
