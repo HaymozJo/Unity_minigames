@@ -15992,7 +15992,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerScore: 0
   scoreText: {fileID: 2033251645}
+  nameText: {fileID: 0}
   gameOverScreen: {fileID: 614286761}
+  highScoreScreen: {fileID: 0}
+  nameScreen: {fileID: 0}
+  menuScreen: {fileID: 0}
 --- !u!4 &1663509628
 Transform:
   m_ObjectHideFlags: 0
