@@ -20,6 +20,7 @@ public class LogicScript : MonoBehaviour
 
     private bool alreadyPlayed = false;
     private int highScore;
+    private string playerName;
 
     [ContextMenu("Increase Score")]
     public void addScore(int scoreToAdd)
@@ -41,17 +42,21 @@ public class LogicScript : MonoBehaviour
 
     public void SetHighScore()
     {
-        alreadyPlayed = PlayerPrefs.HasKey("HighScore");
+        playerName = PlayerPrefs.GetString("Name").ToString();
+        string highscoreStr = "HS" + playerName;
+        Debug.Log(highscoreStr);
+
+        alreadyPlayed = PlayerPrefs.HasKey(highscoreStr);
         if (alreadyPlayed){
-            highScore = PlayerPrefs.GetInt("HighScore");
+            highScore = PlayerPrefs.GetInt(highscoreStr);
             if (playerScore > highScore){
-                PlayerPrefs.SetInt("HighScore", playerScore);
+                PlayerPrefs.SetInt(highscoreStr, playerScore);
                 highScoreText.text = playerScore.ToString();
             }else{
                 highScoreText.text = highScore.ToString();
             }
         }else{
-            PlayerPrefs.SetInt("HighScore", 0);
+            PlayerPrefs.SetInt(highscoreStr, 0);
             highScoreText.text = "0";
         }
     }
