@@ -27,6 +27,8 @@ public class BirdScript : MonoBehaviour
         sr = GetComponent <SpriteRenderer> ();
         sr.sprite = staticBird;
         logic = GameObject.FindGameObjectWithTag("Logic").GetComponent<LogicScript>();
+        logic.ApplyName();
+        logic.SetHighScore();
         birdAlive = true;
     }
 
