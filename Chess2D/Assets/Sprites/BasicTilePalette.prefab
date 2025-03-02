@@ -209,6 +209,7 @@ GameObject:
   m_Component:
   - component: {fileID: 378262727370740523}
   - component: {fileID: 24025140032468371}
+  - component: {fileID: 5527882432884313429}
   m_Layer: 0
   m_Name: BasicTilePalette
   m_TagString: Untagged
@@ -244,6 +245,18 @@ Grid:
   m_CellGap: {x: 0, y: 0, z: 0}
   m_CellLayout: 0
   m_CellSwizzle: 0
+--- !u!114 &5527882432884313429
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8747725403185879886}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c01fa142baff3b24a81c7243a90b7600, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &5784746102761445379
 MonoBehaviour:
   m_ObjectHideFlags: 0
