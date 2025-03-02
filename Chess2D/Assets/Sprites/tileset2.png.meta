@@ -1,16 +1,10 @@
 fileFormatVersion: 2
-guid: 25293faa8d1b1934f826c9163650a3fb
+guid: 7ad2e943d5f6daf4bb34ab96a5690cae
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 6209441807000284706
-    second: tileset1_0
-  - first:
-      213: -9017634572401362149
-    second: tileset1_1
-  - first:
-      213: -6531580382025513940
-    second: tileset1_2
+      213: -4649725926205987829
+    second: tileset2_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -119,7 +113,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: WhiteTileSprite
+      name: White
       rect:
         serializedVersion: 2
         x: 0
@@ -134,14 +128,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 22e26b7ac6e5c2650800000000000000
-      internalID: 6209441807000284706
+      spriteID: b046199c7ead87fb0800000000000000
+      internalID: -4649725926205987829
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: RedPawnSprite
+      name: WhiteHL
       rect:
         serializedVersion: 2
         x: 32
@@ -154,16 +148,16 @@ TextureImporter:
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: b1b3cb5422dead280800000000000000
-      internalID: -9017634572401362149
+      spriteID: 4d13f6fb9fb20374e915a9d34db4f045
+      internalID: -928997361
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: BlueTileSprite
+      name: Blue
       rect:
         serializedVersion: 2
         x: 0
@@ -176,16 +170,16 @@ TextureImporter:
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: c2485739f3a2b55a0800000000000000
-      internalID: -6531580382025513940
+      spriteID: 37e3964a0449ed847a226d697f80b165
+      internalID: 368821099
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: GreenPawnSprite
+      name: BlueHL
       rect:
         serializedVersion: 2
         x: 32
@@ -200,8 +194,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 7339859628de0d043be879ccab80104b
-      internalID: 816866292
+      spriteID: e0c9d96301de1e64a82cff6b8ca89fb4
+      internalID: -857760164
       vertices: []
       indices: 
       edges: []
@@ -210,7 +204,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 062e705df7bf98044b886980e1d0b1b8
+    spriteID: 5e97eb03825dee720800000000000000
     internalID: 0
     vertices: []
     indices: 
@@ -220,10 +214,10 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      BlueTileSprite: -6531580382025513940
-      GreenPawnSprite: 816866292
-      RedPawnSprite: -9017634572401362149
-      WhiteTileSprite: 6209441807000284706
+      Blue: 368821099
+      BlueHL: -857760164
+      White: -4649725926205987829
+      WhiteHL: -928997361
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

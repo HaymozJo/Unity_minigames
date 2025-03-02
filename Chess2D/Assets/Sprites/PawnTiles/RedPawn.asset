@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 13312, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: GreenPawnSprite
+  m_Name: RedPawn
   m_EditorClassIdentifier: 
-  m_Sprite: {fileID: 816866292, guid: 25293faa8d1b1934f826c9163650a3fb, type: 3}
+  m_Sprite: {fileID: 1375003286188620045, guid: 8b56d9509e7ecb84fad7f5b88081662f, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Transform:
     e00: 1
