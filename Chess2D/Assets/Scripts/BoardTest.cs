@@ -124,7 +124,6 @@ public class BoardTest : MonoBehaviour
             TileBase mate = redTilemap.GetTile(newLoc);
             if (mate == RedKing){
                 GameOver.SetActive(true);
-                
             }else{
                 TileBase piece = greenTilemap.GetTile(oldLoc);
                 greenTilemap.SetTile(oldLoc, null);
