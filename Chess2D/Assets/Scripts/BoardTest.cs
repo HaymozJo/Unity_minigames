@@ -6,23 +6,49 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 using UnityEditor.U2D.Aseprite;
 using UnityEditor.Experimental.GraphView;
+using UnityEditor.ShaderGraph;
+using System.Linq;
+using UnityEngine.Rendering;
+using TMPro;
+using Unity.Mathematics;
+using Unity.Collections;
 
 public class BoardTest : MonoBehaviour
 {
     public Tilemap boardTilemap;
     public Tilemap availableTilemap;
     public Tilemap greenTilemap;
+    public Tilemap redTilemap;
     public TileBase blue;
     public TileBase white;
     public TileBase blueHL;
     public TileBase whiteHL;
-    private enum Cell {Green, Red, Free};
+    //All the pieces:
+    public TileBase GreenPawn;
+    public TileBase RedPawn;
+    public TileBase GreenBishop;
+    public TileBase RedBishop;
+    public TileBase GreenHorse;
+    public TileBase RedHorse;
+    public TileBase GreenTower;
+    public TileBase RedTower;
+    public TileBase GreenQueen;
+    public TileBase RedQueen;
+    public TileBase GreenKing;
+    public TileBase RedKing;
+
+    private enum Piece {Pawn, Bishop, Horse, Tower, Queen, King, bug};
+    private enum TeamPossibility {Green, Red, Free, Out};
+    private TeamPossibility myTeam;
+    private TeamPossibility otherTeam;
     private bool click;
     private Vector3Int lastClickedCell;
-
+    private Vector3Int FAROUTSIDE = new Vector3Int(20, 20, 0);
     void Start()
     {
         click = false;
+        myTeam = TeamPossibility.Green;
+        otherTeam = TeamPossibility.Red;
 
     }
 
@@ -33,8 +59,8 @@ public class BoardTest : MonoBehaviour
             Vector3 worldPosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, Mathf.Abs(Camera.main.transform.position.z)));
             Vector3Int cellPosition = boardTilemap.WorldToCell(worldPosition);
             
-            Cell cellColor = checkCaseUse(cellPosition);
-            if (cellColor != Cell.Free){
+            TeamPossibility cellColor = checkTileUse(cellPosition);
+            if (cellColor != TeamPossibility.Free){
                 if (lastClickedCell != cellPosition || click == false){
                     if (click){
                         availableTilemap.ClearAllTiles();
@@ -43,7 +69,7 @@ public class BoardTest : MonoBehaviour
                     //Now we can check for the new cell
                     //iterates through available cells (see AvailableCells fct)
 
-                    int dir = (cellColor == Cell.Green)? 1 : -1;
+                    int dir = (cellColor == TeamPossibility.Green)? 1 : -1;
                     foreach (Vector3Int cell in AvailableCells(cellPosition, dir)){
                         TileBase checkTileColor = boardTilemap.GetTile(cell);
                         if (checkTileColor == white){
@@ -67,37 +93,291 @@ public class BoardTest : MonoBehaviour
     }
 
     //TODO: Add redTileMap once checked for green
-    private Cell checkCaseUse(Vector3Int cellPosition){
+    private TeamPossibility checkTileUse(Vector3Int cellPosition){
         if (boardTilemap.HasTile(cellPosition)){
             if (greenTilemap.HasTile(cellPosition)){
-                return Cell.Green;
+                return TeamPossibility.Green;
+            }else if(redTilemap.HasTile(cellPosition)){
+                return TeamPossibility.Red;
             }else{
-                return Cell.Free;
+                return TeamPossibility.Free;
             }
         }else{
-            return Cell.Free;
+            return TeamPossibility.Out;
         }
         
     }
-    public bool checkCell(Vector3Int cellPosition){
-        bool boardTile = boardTilemap.HasTile(cellPosition);
-        bool free = !greenTilemap.HasTile(cellPosition);
-        return boardTile && free;
+
+    // to facilitate usage of the piece, similar to checkTileUse, we want to know what tile is and what piece is on to do the choices
+    private Piece checkPiece(TileBase pieceTile){
+        if (pieceTile == GreenPawn || pieceTile == RedPawn){return Piece.Pawn;}
+        else if (pieceTile == GreenBishop || pieceTile == RedBishop){
+return Piece.Bishop;}
+        else if (pieceTile == GreenHorse || pieceTile == RedHorse){return Piece.Horse;}
+        else if (pieceTile == GreenTower || pieceTile == RedTower){return Piece.Tower;}
+        else if (pieceTile == GreenQueen || pieceTile == RedQueen){return Piece.Queen;}
+        else if (pieceTile == GreenKing || pieceTile == RedKing){return Piece.King;}else{
+            return Piece.bug;
+        }
     }
+
+
 
     public List<Vector3Int> AvailableCells(Vector3Int cellPosition, int dir){
         List<Vector3Int> availables = new List<Vector3Int>();
-        //case green, we go up on y. case red we go down on y
-        // Assumption test 1: we green, 2 we are a pawn
-        // Should use enum to do case by case and take out checkCell for now, but only when needed
-        for (int x = cellPosition.x - dir; x <= cellPosition.x + dir; x++){
-            Vector3Int toCheck = new Vector3Int(x, cellPosition.y +1, 0);
-            bool free = checkCell(toCheck);
-            Debug.Log("....................");
-            if (free){
-                availables.Add(toCheck);
+        //first we want to check if the piece is in our team or not, if not, no check for available
+        //It also helps us set the dir (go up (+1) for green, go down (-1) for red)
+        if (greenTilemap.HasTile(cellPosition) && myTeam== TeamPossibility.Green){
+            dir = 1;
+            //now we check which piece is on this cell
+            Piece piece = checkPiece(greenTilemap.GetTile(cellPosition));
+            return piece switch
+            {
+                Piece.Pawn => AvailableCellsPawn(cellPosition, dir),
+                Piece.Bishop => AvailableCellsDiag(cellPosition),
+                Piece.Tower => AvailableCellsLine(cellPosition),
+                Piece.Queen => AvailableCellsQueen(cellPosition),
+                Piece.King => AvailableCellsKing(cellPosition),
+                Piece.Horse => AvailableCellsHorse(cellPosition),
+                _ => availables,
+            };
+        }
+        else if (redTilemap.HasTile(cellPosition) && myTeam== TeamPossibility.Red){
+            dir = -1;
+            //now we check which piece is on this cell
+            Piece piece = checkPiece(redTilemap.GetTile(cellPosition));
+            return piece switch
+            {
+                Piece.Pawn => AvailableCellsPawn(cellPosition, dir),
+                Piece.Bishop => AvailableCellsDiag(cellPosition),
+                Piece.Tower => AvailableCellsLine(cellPosition),
+                Piece.Queen => AvailableCellsQueen(cellPosition),
+                Piece.King => AvailableCellsKing(cellPosition),
+                Piece.Horse => AvailableCellsHorse(cellPosition),
+                _ => availables,
+            };
+        }else{
+                    return availables;
+        }
+    } 
+
+    //case pawn, we also have to know which player is playing, we can maybe change the cell to color for easy =
+    //We have to check 3 cases: front is free or not to move, diagonals are occupied by enemy pieces to take
+    // Note: En passant not put in place for now, we also do not look at the king like any different, it will just game over when taken
+    // Note2: we do it manually as it has different behaviours and looping for 2 makes no sense
+    public List<Vector3Int> AvailableCellsPawn(Vector3Int cellPosition, int dir){
+        List<Vector3Int> availables = new List<Vector3Int>();
+        //front:
+        Vector3Int front = new Vector3Int(cellPosition.x, cellPosition.y+dir, 0);
+        if (checkTileUse(front)==TeamPossibility.Free){availables.Add(front);};
+        //diagonals:
+        Vector3Int diagLeft = new Vector3Int(cellPosition.x-1, cellPosition.y+dir, 0);
+        Vector3Int diagRight = new Vector3Int(cellPosition.x+1, cellPosition.y+dir, 0);
+        if (checkTileUse(diagLeft)==otherTeam){availables.Add(diagLeft);};
+        if (checkTileUse(diagRight)==otherTeam){availables.Add(diagRight);};
+        return availables;
+    } 
+
+    //For the bishop, we look at a diagonal in every dir
+    //So we look at -+1*x and -+1*y up for every iteration
+    //We get the diagonals that meet at our bishop and then clear ones not of use:
+    //  - bishop itself, - green pieces (and each after) - red pieces after firs
+    public List<Vector3Int> AvailableCellsDiag(Vector3Int cellPosition){
+
+        //The logic is such that (left to right logic):
+        // for the "going up" diag, all cells with the same x-y are on the diag
+        // for the "going down" diag, all the cells with the same x+y are on the diag
+        int diffBishop = cellPosition.x - cellPosition.y;
+        int sumBishop = cellPosition.x + cellPosition.y;
+        //we do it in "brute force", need to be optimized for bigger board, but 8x8 is chill
+        //We keep a piece to check if we already have seen a piece on this diagonal
+        List<Vector3Int> availablesDownLeft = new();
+        List<Vector3Int> availablesupLeft = new();
+        List<Vector3Int> availablesdownRight = new();
+        List<Vector3Int> availablesupRight = new();
+        Vector3Int downLeftPiece = FAROUTSIDE;
+        Vector3Int upLeftPiece = FAROUTSIDE;
+        Vector3Int downRightPiece = FAROUTSIDE;
+        Vector3Int upRightPiece = FAROUTSIDE;
+        for (int x=0; x < 8; x++){
+            for (int y=0; y<8; y++){
+                Vector3Int pos = new Vector3Int(x,y,0);
+                //takes out the bishop itself
+                if (pos != cellPosition){
+                    if (x-y== diffBishop) {
+                        //case downleft: y < bishop
+                        if (y < cellPosition.y){
+                            (downLeftPiece, availablesDownLeft) = helperLine(cellPosition, pos, downLeftPiece, availablesDownLeft);
+                        //case upright: y > bishop
+                        }else if (y > cellPosition.y){
+                             (upRightPiece, availablesupRight) = helperLine(cellPosition, pos, upRightPiece, availablesupRight, clear:false);
+                        }                    
+                    }
+                    if (x+y == sumBishop){
+                        //case downright: y < bishop
+                        if (y < cellPosition.y){
+                            (downRightPiece, availablesdownRight) = helperLine(cellPosition, pos, downRightPiece, availablesdownRight, clear:false);
+                        //case upleft: y > bishop
+                        }else if (y > cellPosition.y){
+                             (upLeftPiece, availablesupLeft) = helperLine(cellPosition, pos, upLeftPiece, availablesupLeft);
+                        }
+                    }
+                }
+            }
+                
+
+        }
+        List<Vector3Int> availables = new List<Vector3Int>();
+        availables.AddRange(availablesDownLeft);
+        availables.AddRange(availablesdownRight);
+        availables.AddRange(availablesupLeft);
+        availables.AddRange(availablesupRight);
+        foreach (Vector3Int cell in availables){
+            Debug.Log(cell);
+        }
+        return availables;
+    }
+
+
+     public List<Vector3Int> AvailableCellsLine(Vector3Int cellPosition){
+
+        //The logic is such that (left to right logic):
+        // if x or y is the same, they are on the same line
+        List<Vector3Int> availablesLeft = new();
+        List<Vector3Int> availablesUp = new();
+        List<Vector3Int> availablesRight = new();
+        List<Vector3Int> availablesDown = new();
+        Vector3Int leftPiece = FAROUTSIDE;
+        Vector3Int upPiece = FAROUTSIDE;
+        Vector3Int rightPiece = FAROUTSIDE;
+        Vector3Int downPiece = FAROUTSIDE;
+        for (int x=0; x < 8; x++){
+            for (int y=0; y<8; y++){
+                Vector3Int pos = new Vector3Int(x,y,0);
+                //takes out the tower itself
+                if (pos != cellPosition){
+                    if (y== cellPosition.y) {
+                        //case left: x < tower
+                        if (x < cellPosition.x){
+                            (leftPiece, availablesLeft) = helperLine(cellPosition, pos, leftPiece, availablesLeft);
+                        //case right: x > tower
+                        }else if (x > cellPosition.x){
+                             (rightPiece, availablesRight) = helperLine(cellPosition, pos, rightPiece, availablesRight, clear:false);
+                        }                    
+                    }
+                    if (x == cellPosition.x) {
+                        //case down: y < tower
+                        if (y < cellPosition.y){
+                            (downPiece, availablesDown) = helperLine(cellPosition, pos, downPiece, availablesDown);
+                        //case up: y > tower
+                        }else if (y > cellPosition.y){
+                             (upPiece, availablesUp) = helperLine(cellPosition, pos, upPiece, availablesUp, clear:false);
+                        }                    
+                    }
+                }
+            }
+                
+
+        }
+        List<Vector3Int> availables = new List<Vector3Int>();
+        availables.AddRange(availablesLeft);
+        availables.AddRange(availablesRight);
+        availables.AddRange(availablesUp);
+        availables.AddRange(availablesDown);
+        foreach (Vector3Int cell in availables){
+            Debug.Log(cell);
+        }
+        return availables;
+    }
+
+    //queen is diag + line
+    private List<Vector3Int> AvailableCellsQueen(Vector3Int cellPosition){
+        List<Vector3Int> line = AvailableCellsLine(cellPosition);
+        List<Vector3Int> diag = AvailableCellsDiag(cellPosition);
+        line.AddRange(diag);
+        return line;
+    }
+
+    //we iterate through the neighbours and the king but do not set the king
+    private List<Vector3Int> AvailableCellsKing(Vector3Int cellPosition){
+        List<Vector3Int> availables = new();
+        int minX = Math.Max(0, cellPosition.x-1);
+        int maxX = Math.Min(7, cellPosition.x+1);
+        int minY = Math.Max(0, cellPosition.y-1);
+        int maxY = Math.Min(7, cellPosition.y+1);
+
+        for (int x = minX; x<= maxX; x++){
+            for (int y = minY; y <= maxY; y++){
+                Vector3Int pos = new Vector3Int(x,y,0);
+                TeamPossibility caseUse = checkTileUse(pos);
+                if (pos!=cellPosition){
+                    if (caseUse == TeamPossibility.Free || caseUse == otherTeam){
+                        availables.Add(pos);
+                    }
+                } 
             }
         }
         return availables;
-    } 
+    }
+
+    private List<Vector3Int> AvailableCellsHorse(Vector3Int cellPosition){
+        List<Vector3Int> availables = new();
+        int[,] potential = {
+            {1,2}, {1, -2}, {-1, 2}, {-1, -2}, {2, 1}, {2, -1}, {-2, 1}, {-2, -1}
+        };
+
+        for (int i = 0; i <8; i++){
+            int potentialX = cellPosition.x + potential[i,0];
+            int potentialY = cellPosition.y + potential[i,1];
+            Vector3Int pos = new Vector3Int(potentialX, potentialY, 0);
+
+            if (potentialX>=0 && potentialX <8 && potentialY>=0 && potentialY<8){
+                TeamPossibility caseUse = checkTileUse(pos);
+                if (caseUse == TeamPossibility.Free || caseUse == otherTeam){
+                        availables.Add(pos);
+                }
+            }
+        }
+        return availables;
+    }
+    
+
+
+    //Put to avoid redundant code
+    //For every piece that goes through a line (diagonal, horizontal or vertical)
+    //It takes the position checked, a pos of the piece already on the line (None if none), and the availables list
+    // We check if the tile is closer or not than the "lastPiece" occupied, at start and if none it is set as outside to ensure bigger dist
+    // if LastPiece closer than our tile, we don't care for it
+    // else we check the place:
+    //  free -> add it to availables, no change to lastpiece
+    //  myTeam -> clearavailabes, change lastPiece to this place
+    //  otherTeam ->clear availables,  add it to availables and change lastPiece to this place
+    private (Vector3Int, List<Vector3Int>) helperLine(Vector3Int cellPosition, Vector3Int cellChecked, 
+        Vector3Int lastPiece, List<Vector3Int> availables, bool clear=true){
+        float distCheck = Math.Max(Math.Abs(cellChecked.x - cellPosition.x), Math.Abs(cellChecked.y - cellPosition.y));
+        float distLast = (lastPiece == FAROUTSIDE) ? float.MaxValue : // Ensure lastPiece is initialized
+                     Math.Max(Math.Abs(lastPiece.x - cellPosition.x), Math.Abs(lastPiece.y - cellPosition.y));
+
+        // Always update lastPiece for first valid tile
+        if (distCheck < distLast) {  
+            TeamPossibility caseUse = checkTileUse(cellChecked);
+
+            if (caseUse == TeamPossibility.Free) {
+                availables.Add(cellChecked);
+            } 
+            else if (caseUse == myTeam) {
+                if (clear){availables.Clear();}
+                lastPiece = cellChecked; // Update lastPiece
+            } 
+            else if (caseUse == otherTeam) {
+                if (clear){availables.Clear();}
+                availables.Add(cellChecked); 
+                lastPiece = cellChecked; // Update lastPiece
+            }
+        }
+
+        return (lastPiece, availables);
+    }
 }
+        
+
