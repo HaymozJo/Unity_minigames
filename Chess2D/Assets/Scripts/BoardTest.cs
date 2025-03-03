@@ -36,6 +36,8 @@ public class BoardTest : MonoBehaviour
     public TileBase RedQueen;
     public TileBase GreenKing;
     public TileBase RedKing;
+    public TextMeshProUGUI player;
+    public GameObject GameOver;
 
     private enum Piece {Pawn, Bishop, Horse, Tower, Queen, King, bug};
     private enum TeamPossibility {Green, Red, Free, Out};
@@ -52,8 +54,7 @@ public class BoardTest : MonoBehaviour
         lastAvailables = new();
         myTeam = TeamPossibility.Green;
         otherTeam = TeamPossibility.Red;
-
-
+        player.text = "Green";
     }
 
     void Update()
@@ -119,14 +120,36 @@ public class BoardTest : MonoBehaviour
     //        Therefore, no need to check it again. We just get the one that's on our team
     private void MovePiece(Vector3Int oldLoc, Vector3Int newLoc){
         if (myTeam == TeamPossibility.Green){
-            TileBase piece = greenTilemap.GetTile(oldLoc);
-            greenTilemap.SetTile(oldLoc, null);
-            greenTilemap.SetTile(newLoc, piece);
-            redTilemap.SetTile(newLoc, null);
-        }
-        
-        
+            //first check if we are eating the king, if so-> gameover
+            TileBase mate = redTilemap.GetTile(newLoc);
+            if (mate == RedKing){
+                GameOver.SetActive(true);
+                
+            }else{
+                TileBase piece = greenTilemap.GetTile(oldLoc);
+                greenTilemap.SetTile(oldLoc, null);
+                greenTilemap.SetTile(newLoc, piece);
+                redTilemap.SetTile(newLoc, null);
+                //set new text (in a barbarian way but easy)
+                player.text = "Red";
+                myTeam = TeamPossibility.Red;
+                otherTeam = TeamPossibility.Green;
+            }
+        }else if (myTeam == TeamPossibility.Red){
 
+            TileBase mate = greenTilemap.GetTile(newLoc);
+            if (mate == GreenKing){
+                GameOver.SetActive(true);
+            }else{
+                TileBase piece = redTilemap.GetTile(oldLoc);
+                redTilemap.SetTile(oldLoc, null);
+                redTilemap.SetTile(newLoc, piece);
+                greenTilemap.SetTile(newLoc, null);
+                player.text = "Green";
+                myTeam = TeamPossibility.Green;
+                otherTeam = TeamPossibility.Red;
+            }
+        }
     } 
 
     private TeamPossibility checkTileUse(Vector3Int cellPosition){
