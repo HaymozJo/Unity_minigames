@@ -43,12 +43,16 @@ public class BoardTest : MonoBehaviour
     private TeamPossibility otherTeam;
     private bool click;
     private Vector3Int lastClickedCell;
+    private List<Vector3Int> lastAvailables;
     private Vector3Int FAROUTSIDE = new Vector3Int(20, 20, 0);
     void Start()
     {
         click = false;
+        lastClickedCell = new();
+        lastAvailables = new();
         myTeam = TeamPossibility.Green;
         otherTeam = TeamPossibility.Red;
+
 
     }
 
@@ -60,39 +64,71 @@ public class BoardTest : MonoBehaviour
             Vector3Int cellPosition = boardTilemap.WorldToCell(worldPosition);
             
             TeamPossibility cellColor = checkTileUse(cellPosition);
-            if (cellColor != TeamPossibility.Free){
-                if (lastClickedCell != cellPosition || click == false){
-                    if (click){
-                        availableTilemap.ClearAllTiles();
-                    }
-
-                    //Now we can check for the new cell
-                    //iterates through available cells (see AvailableCells fct)
-
-                    int dir = (cellColor == TeamPossibility.Green)? 1 : -1;
-                    foreach (Vector3Int cell in AvailableCells(cellPosition, dir)){
-                        TileBase checkTileColor = boardTilemap.GetTile(cell);
-                        if (checkTileColor == white){
-                            availableTilemap.SetTile(cell, whiteHL);
-                        }else if (checkTileColor == blue){
-                            availableTilemap.SetTile(cell, blueHL);
-                        }
-                    }
-                    lastClickedCell = cellPosition;
-                    click = true;
-                }else{
-                    availableTilemap.ClearAllTiles();
-                    click = false;
-                }
-            
+            // Case where we want new availables. Note that the case where cellPos is in availables is dealt with
+            // within the availibility rules. A stronger bool can be added to force no cannibalism if the availables fail
+            if (cellColor == myTeam && cellPosition != lastClickedCell){
+                //set, we still clearclicked in case we already clicked, if not it changes nothing
+                ClearClicked();
+                //then we get availables and update the variables:
+                //we also need the direction we are looking at, going up (green) or down (red)
+                int dir = (cellColor == TeamPossibility.Green)? 1 : -1;
+                lastAvailables = AvailableCells(cellPosition, dir);
+                lastClickedCell = cellPosition;
+                click = true;
+                //then we show the highligths
+                HighlightCells(lastAvailables);
             }else{
-                    availableTilemap.ClearAllTiles();
-                    click = false;
+                //already clicked, otherwise we just clear all, the myTeam case is already put above on other cell already put above
+                if (click && lastAvailables.Contains(cellPosition)){    
+                    Debug.Log("We should definitly move here eh");
+                    //Move logic: if free, don't care
+                    // if red, overthrow!!, we clean: all on the new pos, our tile in the old pos and add our new tile!
+                    MovePiece(lastClickedCell, cellPosition);
+                    //then we can clear all 
+                    ClearClicked();
+                }else{
+                    ClearClicked();
+                }
             }
         }
     }
 
-    //TODO: Add redTileMap once checked for green
+    //Goal is just to reduce code in main function, highligth the available cells
+    private void HighlightCells(List<Vector3Int> availables){
+        foreach (Vector3Int cell in availables){   
+            TileBase checkTileColor = boardTilemap.GetTile(cell);
+            if (checkTileColor == white){
+                availableTilemap.SetTile(cell, whiteHL);
+            }else if (checkTileColor == blue){
+                availableTilemap.SetTile(cell, blueHL);
+            }
+        }
+    }
+
+    //to stop redundant code, clear the 3 variables with information about the click, also clear highligths tilemap
+    private void ClearClicked(){
+        availableTilemap.ClearAllTiles();
+        lastAvailables.Clear();
+        lastClickedCell = new();
+        click = false;
+    }
+
+    //to just reduce code in the update function, "take" the cell given current team
+    // Note1: we just clean everything that was on the cell, clean origin cell and put our tile
+    // Note2: If we can access the movePiece code, then it means we are already using our team piece
+    //        Therefore, no need to check it again. We just get the one that's on our team
+    private void MovePiece(Vector3Int oldLoc, Vector3Int newLoc){
+        if (myTeam == TeamPossibility.Green){
+            TileBase piece = greenTilemap.GetTile(oldLoc);
+            greenTilemap.SetTile(oldLoc, null);
+            greenTilemap.SetTile(newLoc, piece);
+            redTilemap.SetTile(newLoc, null);
+        }
+        
+        
+
+    } 
+
     private TeamPossibility checkTileUse(Vector3Int cellPosition){
         if (boardTilemap.HasTile(cellPosition)){
             if (greenTilemap.HasTile(cellPosition)){
