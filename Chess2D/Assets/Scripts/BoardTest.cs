@@ -38,6 +38,7 @@ public class BoardTest : MonoBehaviour
     public TileBase RedKing;
     public TextMeshProUGUI player;
     public GameObject GameOver;
+    public AudioManager audioManager;
 
     private enum Piece {Pawn, Bishop, Horse, Tower, Queen, King, bug};
     private enum TeamPossibility {Green, Red, Free, Out};
@@ -47,8 +48,10 @@ public class BoardTest : MonoBehaviour
     private Vector3Int lastClickedCell;
     private List<Vector3Int> lastAvailables;
     private Vector3Int FAROUTSIDE = new Vector3Int(20, 20, 0);
+    private bool paused;
     void Start()
     {
+        paused = false;
         click = false;
         lastClickedCell = new();
         lastAvailables = new();
@@ -59,39 +62,42 @@ public class BoardTest : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetMouseButtonDown(0)) // Left mouse button click
-        {
-            Vector3 worldPosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, Mathf.Abs(Camera.main.transform.position.z)));
-            Vector3Int cellPosition = boardTilemap.WorldToCell(worldPosition);
-            
-            TeamPossibility cellColor = checkTileUse(cellPosition);
-            // Case where we want new availables. Note that the case where cellPos is in availables is dealt with
-            // within the availibility rules. A stronger bool can be added to force no cannibalism if the availables fail
-            if (cellColor == myTeam && cellPosition != lastClickedCell){
-                //set, we still clearclicked in case we already clicked, if not it changes nothing
-                ClearClicked();
-                //then we get availables and update the variables:
-                //we also need the direction we are looking at, going up (green) or down (red)
-                int dir = (cellColor == TeamPossibility.Green)? 1 : -1;
-                lastAvailables = AvailableCells(cellPosition, dir);
-                lastClickedCell = cellPosition;
-                click = true;
-                //then we show the highligths
-                HighlightCells(lastAvailables);
-            }else{
-                //already clicked, otherwise we just clear all, the myTeam case is already put above on other cell already put above
-                if (click && lastAvailables.Contains(cellPosition)){    
-                    Debug.Log("We should definitly move here eh");
-                    //Move logic: if free, don't care
-                    // if red, overthrow!!, we clean: all on the new pos, our tile in the old pos and add our new tile!
-                    MovePiece(lastClickedCell, cellPosition);
-                    //then we can clear all 
+        if (!paused){
+            if (Input.GetMouseButtonDown(0)){
+                Vector3 worldPosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, Mathf.Abs(Camera.main.transform.position.z)));
+                Vector3Int cellPosition = boardTilemap.WorldToCell(worldPosition);
+                
+                TeamPossibility cellColor = checkTileUse(cellPosition);
+                // Case where we want new availables. Note that the case where cellPos is in availables is dealt with
+                // within the availibility rules. A stronger bool can be added to force no cannibalism if the availables fail
+                if (cellColor == myTeam && cellPosition != lastClickedCell){
+                    //set, we still clearclicked in case we already clicked, if not it changes nothing
                     ClearClicked();
+                    //then we get availables and update the variables:
+                    //we also need the direction we are looking at, going up (green) or down (red)
+                    int dir = (cellColor == TeamPossibility.Green)? 1 : -1;
+                    lastAvailables = AvailableCells(cellPosition, dir);
+                    lastClickedCell = cellPosition;
+                    click = true;
+                    //then we show the highligths
+                    HighlightCells(lastAvailables);
                 }else{
-                    ClearClicked();
+                    //already clicked, otherwise we just clear all, the myTeam case is already put above on other cell already put above
+                    if (click && lastAvailables.Contains(cellPosition)){    
+                        Debug.Log("We should definitly move here eh");
+                        //Move logic: if free, don't care
+                        // if red, overthrow!!, we clean: all on the new pos, our tile in the old pos and add our new tile!
+                        MovePiece(lastClickedCell, cellPosition);
+                        
+                        //then we can clear all 
+                        ClearClicked();
+                    }else{
+                        ClearClicked();
+                    }
                 }
             }
         }
+       
     }
 
     //Goal is just to reduce code in main function, highligth the available cells
@@ -121,33 +127,59 @@ public class BoardTest : MonoBehaviour
     private void MovePiece(Vector3Int oldLoc, Vector3Int newLoc){
         if (myTeam == TeamPossibility.Green){
             //first check if we are eating the king, if so-> gameover
-            TileBase mate = redTilemap.GetTile(newLoc);
-            if (mate == RedKing){
-                GameOver.SetActive(true);
+            //Check if red to "overtake"
+            if (redTilemap.HasTile(newLoc)){
+                //check if king -> win boy
+                TileBase mate = redTilemap.GetTile(newLoc);
+                if (mate == RedKing){
+                    paused = true;
+                    GameOver.SetActive(true);
+                }else{
+                    audioManager.PlaySFX(audioManager.chessTake);
+                }
             }else{
-                TileBase piece = greenTilemap.GetTile(oldLoc);
-                greenTilemap.SetTile(oldLoc, null);
-                greenTilemap.SetTile(newLoc, piece);
-                redTilemap.SetTile(newLoc, null);
-                //set new text (in a barbarian way but easy)
-                player.text = "Red";
-                myTeam = TeamPossibility.Red;
-                otherTeam = TeamPossibility.Green;
+                audioManager.PlaySFX(audioManager.chessMove);
             }
+
+            //move piece and clean other tiles
+            TileBase piece = greenTilemap.GetTile(oldLoc);
+            greenTilemap.SetTile(oldLoc, null);
+            greenTilemap.SetTile(newLoc, piece);
+            redTilemap.SetTile(newLoc, null);
+            //set new text (in a barbarian way but easy)
+            player.text = "Red";
+            //change player
+            myTeam = TeamPossibility.Red;
+            otherTeam = TeamPossibility.Green;
+
         }else if (myTeam == TeamPossibility.Red){
 
-            TileBase mate = greenTilemap.GetTile(newLoc);
-            if (mate == GreenKing){
-                GameOver.SetActive(true);
+              //first check if we are eating the king, if so-> gameover
+            //Check if red to "overtake"
+            if (greenTilemap.HasTile(newLoc)){
+                //check if king -> win boy
+                TileBase mate = greenTilemap.GetTile(newLoc);
+                if (mate == GreenKing){
+                    GameOver.SetActive(true);
+                    paused = true;
+                }else{
+                    audioManager.PlaySFX(audioManager.chessTake);
+                }
             }else{
-                TileBase piece = redTilemap.GetTile(oldLoc);
-                redTilemap.SetTile(oldLoc, null);
-                redTilemap.SetTile(newLoc, piece);
-                greenTilemap.SetTile(newLoc, null);
-                player.text = "Green";
-                myTeam = TeamPossibility.Green;
-                otherTeam = TeamPossibility.Red;
+                audioManager.PlaySFX(audioManager.chessMove);
             }
+
+            //move piece and clean other tiles
+            TileBase piece = redTilemap.GetTile(oldLoc);
+            redTilemap.SetTile(oldLoc, null);
+            redTilemap.SetTile(newLoc, piece);
+            greenTilemap.SetTile(newLoc, null);
+            //set new text (in a barbarian way but easy)
+            player.text = "Red";
+            //change player
+            myTeam = TeamPossibility.Green;
+            otherTeam = TeamPossibility.Red;
+
         }
     } 
 
