@@ -19,6 +19,7 @@ public class BoardTest : MonoBehaviour
     public Tilemap availableTilemap;
     public Tilemap greenTilemap;
     public Tilemap redTilemap;
+    public Tilemap takenTilemap;
     public TileBase blue;
     public TileBase white;
     public TileBase blueHL;
@@ -49,6 +50,8 @@ public class BoardTest : MonoBehaviour
     private List<Vector3Int> lastAvailables;
     private Vector3Int FAROUTSIDE = new Vector3Int(20, 20, 0);
     private bool paused;
+    private Vector3Int pos_red_taken;
+    private Vector3Int pos_green_taken;
     void Start()
     {
         paused = false;
@@ -58,6 +61,10 @@ public class BoardTest : MonoBehaviour
         myTeam = TeamPossibility.Green;
         otherTeam = TeamPossibility.Red;
         player.text = "Green";
+        pos_red_taken = new Vector3Int(-1, 7,0);
+        pos_green_taken = new Vector3Int(8, 0,0);
+        takenTilemap.ClearAllTiles();
+
     }
 
     void Update()
@@ -130,12 +137,19 @@ public class BoardTest : MonoBehaviour
             //Check if red to "overtake"
             if (redTilemap.HasTile(newLoc)){
                 //check if king -> win boy
-                TileBase mate = redTilemap.GetTile(newLoc);
-                if (mate == RedKing){
+                TileBase red_piece = redTilemap.GetTile(newLoc);
+                if (red_piece == RedKing){
                     paused = true;
                     GameOver.SetActive(true);
                 }else{
                     audioManager.PlaySFX(audioManager.chessTake);
+                    //add the red piece to the takenTilemap, next to our board
+                    takenTilemap.SetTile(pos_green_taken, red_piece);
+                    if (pos_green_taken.y < 3){pos_green_taken.y += 1;}
+                    else{
+                        pos_green_taken.y = 0;
+                        pos_green_taken.x +=1;
+                    }
                 }
             }else{
                 audioManager.PlaySFX(audioManager.chessMove);
@@ -158,13 +172,20 @@ public class BoardTest : MonoBehaviour
             //Check if red to "overtake"
             if (greenTilemap.HasTile(newLoc)){
                 //check if king -> win boy
-                TileBase mate = greenTilemap.GetTile(newLoc);
-                if (mate == GreenKing){
+                TileBase greenPiece = greenTilemap.GetTile(newLoc);
+                if (greenPiece == GreenKing){
                     GameOver.SetActive(true);
                     paused = true;
                 }else{
                     audioManager.PlaySFX(audioManager.chessTake);
-                }
+                    //add the green piece to the takenTilemap, next to our board
+                    takenTilemap.SetTile(pos_red_taken, greenPiece);
+                    if (pos_red_taken.y > 4){pos_red_taken.y -= 1;}
+                    else{
+                        pos_red_taken.y = 7;
+                        pos_red_taken.x -=1;
+                    }
+                }    
             }else{
                 audioManager.PlaySFX(audioManager.chessMove);
             }
@@ -257,15 +278,22 @@ return Piece.Bishop;}
     // Note2: we do it manually as it has different behaviours and looping for 2 makes no sense
     public List<Vector3Int> AvailableCellsPawn(Vector3Int cellPosition, int dir){
         List<Vector3Int> availables = new List<Vector3Int>();
+        // number of y iteration => 2 if pawn is at either y = 1 or y = 6
+        //Note: as we only have one more in case y = 1 for red and y= 6 for green, we still just iterate through both knowing the +2 won't be reachable
+        int max_step = (cellPosition.y == 1 || cellPosition.y == 6) ? 2: 1;
         //front:
-        Vector3Int front = new Vector3Int(cellPosition.x, cellPosition.y+dir, 0);
-        if (checkTileUse(front)==TeamPossibility.Free){availables.Add(front);};
+        for (int y_add = 1; y_add<=max_step; y_add++){
+
+            Vector3Int front = new Vector3Int(cellPosition.x, cellPosition.y+(dir*y_add), 0);
+            if (checkTileUse(front)==TeamPossibility.Free){availables.Add(front);};
+        }
         //diagonals:
         Vector3Int diagLeft = new Vector3Int(cellPosition.x-1, cellPosition.y+dir, 0);
         Vector3Int diagRight = new Vector3Int(cellPosition.x+1, cellPosition.y+dir, 0);
         if (checkTileUse(diagLeft)==otherTeam){availables.Add(diagLeft);};
         if (checkTileUse(diagRight)==otherTeam){availables.Add(diagRight);};
         return availables;
+        
     } 
 
     //For the bishop, we look at a diagonal in every dir
