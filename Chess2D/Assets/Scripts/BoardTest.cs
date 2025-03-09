@@ -12,6 +12,9 @@ using UnityEngine.Rendering;
 using TMPro;
 using Unity.Mathematics;
 using Unity.Collections;
+using System.Collections;
+using NUnit.Framework;
+using UnityEngine.TextCore.LowLevel;
 
 public class BoardTest : MonoBehaviour
 {
@@ -52,10 +55,13 @@ public class BoardTest : MonoBehaviour
     private bool paused;
     private Vector3Int pos_red_taken;
     private Vector3Int pos_green_taken;
+
+    private Boolean mateState;
     void Start()
     {
         paused = false;
         click = false;
+        mateState = false;
         lastClickedCell = new();
         lastAvailables = new();
         myTeam = TeamPossibility.Green;
@@ -127,82 +133,65 @@ public class BoardTest : MonoBehaviour
         click = false;
     }
 
-    //to just reduce code in the update function, "take" the cell given current team
-    // Note1: we just clean everything that was on the cell, clean origin cell and put our tile
-    // Note2: If we can access the movePiece code, then it means we are already using our team piece
-    //        Therefore, no need to check it again. We just get the one that's on our team
+
+    // to reduce redundant code:
     private void MovePiece(Vector3Int oldLoc, Vector3Int newLoc){
-        if (myTeam == TeamPossibility.Green){
-            //first check if we are eating the king, if so-> gameover
-            //Check if red to "overtake"
-            if (redTilemap.HasTile(newLoc)){
-                //check if king -> win boy
-                TileBase red_piece = redTilemap.GetTile(newLoc);
-                if (red_piece == RedKing){
-                    paused = true;
-                    GameOver.SetActive(true);
-                }else{
-                    audioManager.PlaySFX(audioManager.chessTake);
-                    //add the red piece to the takenTilemap, next to our board
-                    takenTilemap.SetTile(pos_green_taken, red_piece);
-                    if (pos_green_taken.y < 3){pos_green_taken.y += 1;}
-                    else{
-                        pos_green_taken.y = 0;
-                        pos_green_taken.x +=1;
-                    }
-                }
+        //Sets some variable given the color string chosen:
+        bool green = myTeam == TeamPossibility.Green;
+        TileBase king = green? RedKing: GreenKing;
+        string text = green? "Green": "Red";
+        Tilemap myTilemap = green? greenTilemap: redTilemap;
+        Tilemap otherTilemap = green? redTilemap: greenTilemap;
+
+        //first check if we are eating the king, if so-> gameover
+        if (otherTilemap.HasTile(newLoc)){
+            //check if king -> win boy
+            TileBase otherPiece = otherTilemap.GetTile(newLoc);
+            if (otherPiece == king){
+                paused = true;
+                GameOver.SetActive(true);
             }else{
-                audioManager.PlaySFX(audioManager.chessMove);
+                audioManager.PlaySFX(audioManager.chessTake);
+                AddToTaken(otherPiece);
             }
-
-            //move piece and clean other tiles
-            TileBase piece = greenTilemap.GetTile(oldLoc);
-            greenTilemap.SetTile(oldLoc, null);
-            greenTilemap.SetTile(newLoc, piece);
-            redTilemap.SetTile(newLoc, null);
-            //set new text (in a barbarian way but easy)
-            player.text = "Red";
-            //change player
-            myTeam = TeamPossibility.Red;
-            otherTeam = TeamPossibility.Green;
-
-        }else if (myTeam == TeamPossibility.Red){
-
-              //first check if we are eating the king, if so-> gameover
-            //Check if red to "overtake"
-            if (greenTilemap.HasTile(newLoc)){
-                //check if king -> win boy
-                TileBase greenPiece = greenTilemap.GetTile(newLoc);
-                if (greenPiece == GreenKing){
-                    GameOver.SetActive(true);
-                    paused = true;
-                }else{
-                    audioManager.PlaySFX(audioManager.chessTake);
-                    //add the green piece to the takenTilemap, next to our board
-                    takenTilemap.SetTile(pos_red_taken, greenPiece);
-                    if (pos_red_taken.y > 4){pos_red_taken.y -= 1;}
-                    else{
-                        pos_red_taken.y = 7;
-                        pos_red_taken.x -=1;
-                    }
-                }    
-            }else{
-                audioManager.PlaySFX(audioManager.chessMove);
-            }
-
-            //move piece and clean other tiles
-            TileBase piece = redTilemap.GetTile(oldLoc);
-            redTilemap.SetTile(oldLoc, null);
-            redTilemap.SetTile(newLoc, piece);
-            greenTilemap.SetTile(newLoc, null);
-            //set new text (in a barbarian way but easy)
-            player.text = "Red";
-            //change player
-            myTeam = TeamPossibility.Green;
-            otherTeam = TeamPossibility.Red;
-
+        }else{
+            audioManager.PlaySFX(audioManager.chessMove);
         }
-    } 
+
+        //move piece and clean other tiles
+        TileBase piece = myTilemap.GetTile(oldLoc);
+        myTilemap.SetTile(oldLoc, null);
+        myTilemap.SetTile(newLoc, piece);
+        otherTilemap.SetTile(newLoc, null);
+        //set new text (in a barbarian way but easy)
+        player.text = text;
+        //change player
+        (otherTeam, myTeam) = (myTeam, otherTeam);
+    }
+
+    //add to taken tilemap
+    private void AddToTaken(TileBase piece){          
+        //Kinad obligated to do it manually otherwise complicated to change the variable through another variable
+        // in a really "clean and understandable" way
+        if (myTeam ==  TeamPossibility.Green){
+            takenTilemap.SetTile(pos_green_taken, piece);
+            if (pos_green_taken.y < 3){ pos_green_taken.y += 1;}
+            else{
+                pos_green_taken.y = 0;
+                pos_green_taken.x +=1;
+            }
+        }else{
+            takenTilemap.SetTile(pos_red_taken, piece);
+            if (pos_red_taken.y > 4){pos_red_taken.y -= 1;}
+            else{
+                pos_red_taken.y = 7;
+                pos_red_taken.x -=1;
+            }
+    }
+       
+
+                     
+    }
 
     private TeamPossibility checkTileUse(Vector3Int cellPosition){
         if (boardTilemap.HasTile(cellPosition)){
