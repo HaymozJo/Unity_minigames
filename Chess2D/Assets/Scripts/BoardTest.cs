@@ -56,12 +56,12 @@ public class BoardTest : MonoBehaviour
     private Vector3Int pos_red_taken;
     private Vector3Int pos_green_taken;
 
-    private Boolean mateState;
+    private Boolean checkState;
     void Start()
     {
         paused = false;
         click = false;
-        mateState = false;
+        checkState = false;
         lastClickedCell = new();
         lastAvailables = new();
         myTeam = TeamPossibility.Green;
@@ -87,9 +87,7 @@ public class BoardTest : MonoBehaviour
                     //set, we still clearclicked in case we already clicked, if not it changes nothing
                     ClearClicked();
                     //then we get availables and update the variables:
-                    //we also need the direction we are looking at, going up (green) or down (red)
-                    int dir = (cellColor == TeamPossibility.Green)? 1 : -1;
-                    lastAvailables = AvailableCells(cellPosition, dir);
+                    lastAvailables = AvailableCells(cellPosition);
                     lastClickedCell = cellPosition;
                     click = true;
                     //then we show the highligths
@@ -97,7 +95,6 @@ public class BoardTest : MonoBehaviour
                 }else{
                     //already clicked, otherwise we just clear all, the myTeam case is already put above on other cell already put above
                     if (click && lastAvailables.Contains(cellPosition)){    
-                        Debug.Log("We should definitly move here eh");
                         //Move logic: if free, don't care
                         // if red, overthrow!!, we clean: all on the new pos, our tile in the old pos and add our new tile!
                         MovePiece(lastClickedCell, cellPosition);
@@ -114,8 +111,14 @@ public class BoardTest : MonoBehaviour
     }
 
     //Goal is just to reduce code in main function, highligth the available cells
+    // We also add a setter of the "mate" state if one of the available cells is a king
     private void HighlightCells(List<Vector3Int> availables){
+        TileBase king = myTeam == TeamPossibility.Green ? RedKing: GreenKing;
+        Tilemap toCheck4MateTilemap = myTeam == TeamPossibility.Green ? redTilemap: greenTilemap;
         foreach (Vector3Int cell in availables){   
+            TileBase check4MatePiece = toCheck4MateTilemap.GetTile(cell);
+            checkState = check4MatePiece == king;
+            if (checkState){Debug.Log("Oy, it's a check ");}
             TileBase checkTileColor = boardTilemap.GetTile(cell);
             if (checkTileColor == white){
                 availableTilemap.SetTile(cell, whiteHL);
@@ -136,10 +139,11 @@ public class BoardTest : MonoBehaviour
 
     // to reduce redundant code:
     private void MovePiece(Vector3Int oldLoc, Vector3Int newLoc){
+        checkMate();
         //Sets some variable given the color string chosen:
         bool green = myTeam == TeamPossibility.Green;
         TileBase king = green? RedKing: GreenKing;
-        string text = green? "Green": "Red";
+        string text = green? "Red": "Green";
         Tilemap myTilemap = green? greenTilemap: redTilemap;
         Tilemap otherTilemap = green? redTilemap: greenTilemap;
 
@@ -187,12 +191,28 @@ public class BoardTest : MonoBehaviour
                 pos_red_taken.y = 7;
                 pos_red_taken.x -=1;
             }
-    }
-       
-
+        }
                      
     }
 
+    private void checkMate(){
+        bool green = myTeam == TeamPossibility.Green;
+        Tilemap myTilemap = green? greenTilemap: redTilemap;
+        Tilemap otherTilemap = green? redTilemap: greenTilemap; 
+        TileBase myKing = green? GreenKing: RedKing;
+        BoundsInt bounds = myTilemap.cellBounds;
+        myTilemap.CompressBounds();
+        foreach (var pos in myTilemap.cellBounds.allPositionsWithin)
+        {
+            TileBase tile = myTilemap.GetTile(pos);
+            if (tile == myKing){
+                
+
+
+            }
+
+        }
+    }   
     private TeamPossibility checkTileUse(Vector3Int cellPosition){
         if (boardTilemap.HasTile(cellPosition)){
             if (greenTilemap.HasTile(cellPosition)){
@@ -223,29 +243,16 @@ return Piece.Bishop;}
 
 
 
-    public List<Vector3Int> AvailableCells(Vector3Int cellPosition, int dir){
+    public List<Vector3Int> AvailableCells(Vector3Int cellPosition){
         List<Vector3Int> availables = new List<Vector3Int>();
+        bool green = myTeam == TeamPossibility.Green;
+        Tilemap myTileMap = green? greenTilemap: redTilemap;
+        int dir = green? 1:-1;
         //first we want to check if the piece is in our team or not, if not, no check for available
         //It also helps us set the dir (go up (+1) for green, go down (-1) for red)
-        if (greenTilemap.HasTile(cellPosition) && myTeam== TeamPossibility.Green){
-            dir = 1;
+        if (myTileMap.HasTile(cellPosition)){
             //now we check which piece is on this cell
-            Piece piece = checkPiece(greenTilemap.GetTile(cellPosition));
-            return piece switch
-            {
-                Piece.Pawn => AvailableCellsPawn(cellPosition, dir),
-                Piece.Bishop => AvailableCellsDiag(cellPosition),
-                Piece.Tower => AvailableCellsLine(cellPosition),
-                Piece.Queen => AvailableCellsQueen(cellPosition),
-                Piece.King => AvailableCellsKing(cellPosition),
-                Piece.Horse => AvailableCellsHorse(cellPosition),
-                _ => availables,
-            };
-        }
-        else if (redTilemap.HasTile(cellPosition) && myTeam== TeamPossibility.Red){
-            dir = -1;
-            //now we check which piece is on this cell
-            Piece piece = checkPiece(redTilemap.GetTile(cellPosition));
+            Piece piece = checkPiece(myTileMap.GetTile(cellPosition));
             return piece switch
             {
                 Piece.Pawn => AvailableCellsPawn(cellPosition, dir),
@@ -339,9 +346,6 @@ return Piece.Bishop;}
         availables.AddRange(availablesdownRight);
         availables.AddRange(availablesupLeft);
         availables.AddRange(availablesupRight);
-        foreach (Vector3Int cell in availables){
-            Debug.Log(cell);
-        }
         return availables;
     }
 
@@ -391,9 +395,6 @@ return Piece.Bishop;}
         availables.AddRange(availablesRight);
         availables.AddRange(availablesUp);
         availables.AddRange(availablesDown);
-        foreach (Vector3Int cell in availables){
-            Debug.Log(cell);
-        }
         return availables;
     }
 
