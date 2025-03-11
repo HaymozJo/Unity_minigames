@@ -1,20 +1,11 @@
 using System;
-using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Tilemaps;
-using UnityEditor.U2D.Aseprite;
-using UnityEditor.Experimental.GraphView;
-using UnityEditor.ShaderGraph;
 using System.Linq;
-using UnityEngine.Rendering;
+
 using TMPro;
-using Unity.Mathematics;
-using Unity.Collections;
-using System.Collections;
-using NUnit.Framework;
-using UnityEngine.TextCore.LowLevel;
 
 public class BoardTest : MonoBehaviour
 {
@@ -55,7 +46,9 @@ public class BoardTest : MonoBehaviour
     private bool paused;
     private Vector3Int pos_red_taken;
     private Vector3Int pos_green_taken;
-
+    private HashSet<Vector3Int> setGreenChecked;//list of chekmated case at every turn
+    private HashSet<Vector3Int> setRedChecked; //Note: if we take all, we could set for each entities their
+                                            //availables cases and keep it
     private Boolean checkState;
     void Start()
     {
@@ -70,7 +63,8 @@ public class BoardTest : MonoBehaviour
         pos_red_taken = new Vector3Int(-1, 7,0);
         pos_green_taken = new Vector3Int(8, 0,0);
         takenTilemap.ClearAllTiles();
-
+        setGreenChecked = new();
+        setRedChecked = new ();
     }
 
     void Update()
@@ -87,7 +81,7 @@ public class BoardTest : MonoBehaviour
                     //set, we still clearclicked in case we already clicked, if not it changes nothing
                     ClearClicked();
                     //then we get availables and update the variables:
-                    lastAvailables = AvailableCells(cellPosition);
+                    lastAvailables = AvailableCells(cellPosition, myTeam);
                     lastClickedCell = cellPosition;
                     click = true;
                     //then we show the highligths
@@ -111,14 +105,8 @@ public class BoardTest : MonoBehaviour
     }
 
     //Goal is just to reduce code in main function, highligth the available cells
-    // We also add a setter of the "mate" state if one of the available cells is a king
     private void HighlightCells(List<Vector3Int> availables){
-        TileBase king = myTeam == TeamPossibility.Green ? RedKing: GreenKing;
-        Tilemap toCheck4MateTilemap = myTeam == TeamPossibility.Green ? redTilemap: greenTilemap;
         foreach (Vector3Int cell in availables){   
-            TileBase check4MatePiece = toCheck4MateTilemap.GetTile(cell);
-            checkState = check4MatePiece == king;
-            if (checkState){Debug.Log("Oy, it's a check ");}
             TileBase checkTileColor = boardTilemap.GetTile(cell);
             if (checkTileColor == white){
                 availableTilemap.SetTile(cell, whiteHL);
@@ -139,7 +127,7 @@ public class BoardTest : MonoBehaviour
 
     // to reduce redundant code:
     private void MovePiece(Vector3Int oldLoc, Vector3Int newLoc){
-        checkMate();
+        CheckMate(myTeam);
         //Sets some variable given the color string chosen:
         bool green = myTeam == TeamPossibility.Green;
         TileBase king = green? RedKing: GreenKing;
@@ -191,27 +179,24 @@ public class BoardTest : MonoBehaviour
                 pos_red_taken.y = 7;
                 pos_red_taken.x -=1;
             }
-        }
-                     
+        }      
     }
 
-    private void checkMate(){
-        bool green = myTeam == TeamPossibility.Green;
-        Tilemap myTilemap = green? greenTilemap: redTilemap;
+    //Check all the possible checked cells. so it is all availables cells put together in a Set such as the king can't go there
+    private void CheckMate(TeamPossibility team){
+        bool green = team == TeamPossibility.Green;
+        //Get other team color and tilemap
+        TeamPossibility otherTeam = green? TeamPossibility.Red: TeamPossibility.Green;
         Tilemap otherTilemap = green? redTilemap: greenTilemap; 
-        TileBase myKing = green? GreenKing: RedKing;
-        BoundsInt bounds = myTilemap.cellBounds;
-        myTilemap.CompressBounds();
-        foreach (var pos in myTilemap.cellBounds.allPositionsWithin)
+        HashSet<Vector3Int> kingNotWelcomed = green? setRedChecked: setGreenChecked;
+        foreach (var pos in otherTilemap.cellBounds.allPositionsWithin)
         {
-            TileBase tile = myTilemap.GetTile(pos);
-            if (tile == myKing){
-                
-
-
+            if (otherTilemap.HasTile(pos)){
+                TileBase tile = otherTilemap.GetTile(pos);
+                kingNotWelcomed.UnionWith(AvailableCells(pos, otherTeam)); 
             }
-
         }
+        
     }   
     private TeamPossibility checkTileUse(Vector3Int cellPosition){
         if (boardTilemap.HasTile(cellPosition)){
@@ -243,9 +228,9 @@ return Piece.Bishop;}
 
 
 
-    public List<Vector3Int> AvailableCells(Vector3Int cellPosition){
+    private List<Vector3Int> AvailableCells(Vector3Int cellPosition, TeamPossibility team){
         List<Vector3Int> availables = new List<Vector3Int>();
-        bool green = myTeam == TeamPossibility.Green;
+        bool green = team == TeamPossibility.Green;
         Tilemap myTileMap = green? greenTilemap: redTilemap;
         int dir = green? 1:-1;
         //first we want to check if the piece is in our team or not, if not, no check for available
